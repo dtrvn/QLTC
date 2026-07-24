@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Quản lý chi tiêu gia đình</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
+  <style>
+    :root{
+      --bg:#f5f7fb;--card:#fff;--soft:#f9fafb;--text:#111827;--muted:#6b7280;--line:#e5e7eb;
+      --blue:#2563eb;--green:#16a34a;--red:#ef4444;--purple:#7c3aed;--cyan:#0891b2;--teal:#14b8a6;--amber:#f59e0b;--brown:#92400e;--pink:#ec4899;
+      --shadow:0 16px 40px rgba(15,23,42,.08);--radius:22px;--side:248px;--bottom:78px
+    }
+    *{box-sizing:border-box}body{margin:0;font-family:Inter,system-ui,sans-serif;background:radial-gradient(circle at top left,rgba(37,99,235,.10),transparent 34%),var(--bg);color:var(--text);overflow-x:hidden}button,input,select,textarea{font-family:inherit}.app{min-height:100vh}
+    .sidebar{position:fixed;left:0;top:0;bottom:0;width:var(--side);padding:22px;border-right:1px solid var(--line);background:rgba(255,255,255,.88);backdrop-filter:blur(18px);z-index:20}.main{margin-left:var(--side);width:calc(100% - var(--side));padding:24px}
+    .brand{display:flex;gap:12px;align-items:center;margin-bottom:22px}.logo{width:44px;height:44px;border-radius:16px;background:linear-gradient(135deg,var(--blue),var(--purple));color:#fff;display:grid;place-items:center;font-weight:900;box-shadow:0 12px 28px rgba(37,99,235,.28)}.brand h1{margin:0;font-size:17px}.brand p{margin:3px 0 0;color:var(--muted);font-size:12px}
+    .nav{display:grid;gap:8px}.nav-btn{border:0;background:transparent;color:var(--muted);border-radius:16px;padding:13px 14px;text-align:left;font-weight:800;cursor:pointer;display:flex;align-items:center;gap:12px;transition:.18s}.nav-btn svg{width:21px;height:21px;stroke:currentColor;stroke-width:2.2;fill:none;stroke-linecap:round;stroke-linejoin:round;transition:.18s}.nav-btn:hover{background:var(--soft);color:var(--text);transform:translateX(2px)}.nav-btn:hover svg{transform:scale(1.08)}.nav-btn.active{background:#eff6ff;color:var(--blue);box-shadow:inset 0 0 0 1px rgba(37,99,235,.08)}
+    .cash-card{position:absolute;left:22px;right:22px;bottom:22px;border-radius:24px;padding:18px;color:#fff;background:linear-gradient(135deg,#2563eb,#7c3aed);box-shadow:0 18px 38px rgba(37,99,235,.24);overflow:hidden}.cash-card:after{content:"";position:absolute;right:-38px;top:-38px;width:128px;height:128px;background:rgba(255,255,255,.13);border-radius:50%}.cash-card *{position:relative}.cash-card small{opacity:.84;font-weight:800}.cash-card b{display:block;margin-top:8px;font-size:21px;letter-spacing:-.04em}.cash-card span{display:block;margin-top:12px;font-size:12px;opacity:.78}
+    .topbar{display:flex;justify-content:space-between;gap:16px;align-items:flex-start;margin-bottom:20px}.title h2{font-size:28px;margin:0;letter-spacing:-.03em}.title p{margin:6px 0 0;color:var(--muted);font-size:14px}.actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:flex-end}.btn{border:0;border-radius:14px;min-height:44px;padding:0 15px;display:inline-flex;align-items:center;justify-content:center;gap:8px;font-weight:800;cursor:pointer;white-space:nowrap;transition:.18s}.btn:hover{transform:translateY(-1px)}.btn-primary{color:#fff;background:linear-gradient(135deg,var(--blue),var(--purple));box-shadow:0 12px 28px rgba(37,99,235,.24)}.btn-soft{background:var(--card);border:1px solid var(--line);color:var(--text)}.btn-danger{background:#fee2e2;color:#b91c1c}.year-actions{display:inline-flex;gap:8px;align-items:center;padding:5px;border:1px solid var(--line);border-radius:999px;background:var(--soft);box-shadow:0 8px 18px rgba(15,23,42,.04)}#yearLabel,#reportYearLabel{display:inline-flex;align-items:center;justify-content:center;min-width:92px;height:32px;padding:0 14px;border-radius:999px;background:#eff6ff;color:var(--blue);font-size:13px;font-weight:900;letter-spacing:-.01em}.icon-btn{width:32px;height:32px;min-height:32px;padding:0;border-radius:999px;border:1px solid transparent;background:var(--card);color:var(--muted);display:grid;place-items:center;cursor:pointer;transition:.18s}.icon-btn:hover{color:var(--blue);border-color:rgba(37,99,235,.24);background:#fff;transform:translateY(-1px);box-shadow:0 8px 18px rgba(37,99,235,.12)}.icon-btn svg{width:17px;height:17px;stroke:currentColor;stroke-width:2.35;fill:none;stroke-linecap:round;stroke-linejoin:round}.report-month-nav{display:inline-flex;gap:8px;align-items:center;padding:5px;border:1px solid var(--line);border-radius:999px;background:var(--soft);box-shadow:0 8px 18px rgba(15,23,42,.04)}#reportMonth{display:inline-flex;align-items:center;justify-content:center;min-width:116px;height:32px;padding:0 14px;border-radius:999px;background:#ecfdf5;color:var(--green);font-size:13px;font-weight:900;letter-spacing:-.01em}.month{display:flex;align-items:center;gap:6px;background:var(--card);border:1px solid var(--line);border-radius:18px;padding:5px}.month button{border:0;background:var(--soft);border-radius:13px;min-width:38px;height:38px;font-weight:900}.month span{min-width:130px;text-align:center;font-weight:850;font-size:14px}
+    .view{display:none;opacity:0;transform:translateY(10px)}.view.active{display:block;animation:viewIn .28s ease forwards}@keyframes viewIn{to{opacity:1;transform:translateY(0)}}.kpis{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:14px}.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px}.kpi{min-height:130px;position:relative;overflow:hidden}.kpi:after{content:"";position:absolute;right:-32px;top:-32px;width:110px;height:110px;border-radius:50%;background:currentColor;opacity:.09}.kpi-head{display:flex;justify-content:space-between;margin-bottom:18px}.kpi-ico svg{width:20px;height:20px;stroke:currentColor;stroke-width:2.2;fill:none;stroke-linecap:round;stroke-linejoin:round}.kpi small{color:var(--muted);font-size:13px;font-weight:800}.kpi b{font-size:21px;letter-spacing:-.04em}.kpi p{font-size:12px;color:var(--muted);margin:8px 0 0}.blue{color:var(--blue)}.green{color:var(--green)}.red{color:var(--red)}.purple{color:var(--purple)}.teal{color:var(--teal)}.cyan{color:var(--cyan)}
+    .dash-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-top:16px}.full{grid-column:1/-1}.card-title{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:14px}.card-title h3{margin:0;font-size:17px}.card-title span{color:var(--muted);font-size:12px}.chart{height:278px}.chart.year{height:330px}.chart-legend-wrap{display:grid;grid-template-columns:minmax(240px,1fr) minmax(210px,.55fr);gap:16px;align-items:center}.legend{display:grid;gap:9px}.legend-item{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 10px;border:1px solid var(--line);background:var(--soft);border-radius:14px}.legend-name{display:flex;align-items:center;gap:8px;font-weight:800;font-size:12px}.dot{width:10px;height:10px;border-radius:50%;flex:0 0 10px}.legend-value{font-size:12px;font-weight:900;white-space:nowrap}.recent-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.recent-col{display:grid;gap:10px}.recent-rank{min-width:38px;height:26px;border-radius:999px;background:#eff6ff;color:var(--blue);display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:900;border:1px solid rgba(37,99,235,.14);margin-right:8px}.recent-col:nth-child(2) .recent-rank{background:#f5f3ff;color:var(--purple);border-color:rgba(124,58,237,.16)}.item{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center;padding:13px;border-radius:16px;background:var(--soft);border:1px solid var(--line)}.item-title{font-weight:800;margin:0 0 4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.meta{font-size:12px;color:var(--muted);display:flex;gap:7px;flex-wrap:wrap}.amount{font-weight:900;text-align:right}.badge{display:inline-flex;border-radius:999px;padding:4px 9px;font-size:11px;font-weight:900;border:1px solid var(--line);background:var(--card);color:var(--muted)}.badge.INCOME{color:var(--green);background:rgba(22,163,74,.1)}.badge.EXPENSE{color:var(--red);background:rgba(239,68,68,.1)}.badge.INVEST{color:var(--purple);background:rgba(124,58,237,.1)}.badge.DIVEST{color:var(--cyan);background:rgba(8,145,178,.1)}
+    .toolbar{display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:14px}.tool-left,.tool-right{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.input,.select,.textarea{border:1px solid var(--line);background:var(--card);color:var(--text);border-radius:14px;min-height:44px;padding:0 13px;outline:none;font-size:14px}.mini-select{min-height:34px;border-radius:12px;font-size:12px;font-weight:800;padding:0 10px}.recent-tools{display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end}.date-range{display:flex;gap:8px;align-items:center}.date-range.hide{display:none}.search{min-width:270px}.table-card{padding:0;overflow:hidden}.table-wrap{overflow-x:auto}table{width:100%;border-collapse:collapse;min-width:920px}th,td{border-bottom:1px solid var(--line);padding:14px 16px;text-align:left;font-size:13px}th{background:var(--soft);color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.04em}.row-actions{display:flex;gap:8px;justify-content:flex-end}.action-btn{min-height:34px;border-radius:12px;padding:0 11px;border:1px solid var(--line);background:var(--card);font-size:12px;font-weight:850;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:.16s}.action-btn:hover{transform:translateY(-1px);box-shadow:0 10px 22px rgba(15,23,42,.10)}.action-edit{color:var(--blue)}.action-edit:hover{background:#eff6ff}.action-delete{color:#b91c1c;background:#fff5f5}.action-delete:hover{background:#fee2e2}.mobile-list{display:none}
+    .asset-summary-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}.asset-summary{position:relative;overflow:hidden;display:grid;gap:13px;cursor:pointer;transition:.18s}.asset-summary:hover{transform:translateY(-2px);box-shadow:0 18px 40px rgba(15,23,42,.11)}.asset-summary:before{content:"";position:absolute;right:-34px;top:-34px;width:120px;height:120px;border-radius:50%;opacity:.10;background:linear-gradient(135deg,var(--blue),var(--purple))}.asset-summary.GOLD:before{background:linear-gradient(135deg,#f59e0b,#facc15)}.asset-summary.STOCK:before{background:linear-gradient(135deg,#7c3aed,#2563eb)}.asset-summary.LAND:before{background:linear-gradient(135deg,#92400e,#f97316)}.asset-summary.SAVING:before{background:linear-gradient(135deg,#16a34a,#14b8a6)}.asset-summary.INSURANCE:before{background:linear-gradient(135deg,#06b6d4,#7c3aed)}.asset-summary>*{position:relative}.asset-head{display:flex;justify-content:space-between;gap:10px}.asset-type{font-size:12px;color:var(--muted);font-weight:900}.asset-name{font-size:18px;font-weight:900;margin-top:4px}.asset-value{font-size:22px;font-weight:900;letter-spacing:-.04em}.asset-stats{display:grid;grid-template-columns:1fr 1fr;gap:10px}.stat{background:var(--soft);border-radius:14px;padding:10px}.stat span{display:block;color:var(--muted);font-size:11px;margin-bottom:5px}.stat b{font-size:13px}.status-badge{display:inline-flex;align-items:center;border-radius:999px;padding:6px 10px;font-size:11px;font-weight:900;background:rgba(22,163,74,.1);color:var(--green)}.asset-detail{margin-top:16px;display:none}.asset-detail.show{display:block;animation:viewIn .25s ease forwards}.detail-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}.stock-table{overflow-x:auto}.stock-table table{min-width:720px}.stock-chip{display:inline-flex;align-items:center;border-radius:999px;padding:4px 9px;background:#ede9fe;color:var(--purple);font-size:11px;font-weight:900}.summary-breakdown{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.summary-box{border:1px solid var(--line);background:var(--soft);border-radius:18px;padding:14px;display:grid;gap:11px}.summary-box-head{display:flex;justify-content:space-between;gap:10px;align-items:center}.summary-box-head b{font-size:15px}.summary-total{font-weight:900}.mini-bar-row{display:grid;gap:6px}.mini-bar-label{display:flex;justify-content:space-between;gap:10px;font-size:12px;font-weight:800}.mini-bar-track{height:12px;background:var(--card);border:1px solid var(--line);border-radius:999px;overflow:hidden}.mini-bar-fill{height:100%;border-radius:999px;min-width:8px}.mini-bar-meta{font-size:11px;color:var(--muted)}.report-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}.report-section-card,.report-grid .card{padding:24px;border-radius:26px}.report-section-card .card-title,.report-grid .card-title{margin-bottom:18px;padding-bottom:13px;border-bottom:1px solid var(--line)}.report-section-card .card-title h3,.report-grid .card-title h3{font-size:20px;font-weight:900}.modal-bg{display:none;position:fixed;inset:0;background:rgba(15,23,42,.48);z-index:60;align-items:center;justify-content:center;padding:20px}.modal-bg.show{display:flex}.modal{width:min(760px,100%);max-height:90vh;overflow:auto;background:var(--card);border-radius:28px;border:1px solid var(--line);box-shadow:var(--shadow)}.modal-head{position:sticky;top:0;background:var(--card);border-bottom:1px solid var(--line);padding:20px 22px;display:flex;justify-content:space-between;align-items:center;z-index:1}.modal-head h3{margin:0}.modal-body{padding:22px}.form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.field{display:grid;gap:7px}.field.full{grid-column:1/-1}.field label{font-weight:800;font-size:13px}.textarea{min-height:84px;padding:12px}.asset-fields{display:contents}.asset-fields.hide{display:none}.modal-actions{display:flex;justify-content:flex-end;gap:10px;padding:0 22px 22px;flex-wrap:wrap}.toast{display:none;position:fixed;right:20px;bottom:20px;z-index:80;background:var(--card);border:1px solid var(--line);box-shadow:var(--shadow);border-radius:18px;padding:14px 16px;font-weight:800}.toast.show{display:block}.empty{padding:32px 18px;border:1px dashed var(--line);border-radius:18px;text-align:center;color:var(--muted);background:var(--soft)}.bottom-nav,.fab{display:none}
+    .chart.chart-fx{animation:chartFadeIn .55s cubic-bezier(.22,.8,.2,1) both}.card.chart-card-fx{animation:cardSoftIn .45s ease both}@keyframes chartFadeIn{0%{opacity:0;transform:translateY(12px) scale(.985);filter:blur(2px)}100%{opacity:1;transform:translateY(0) scale(1);filter:blur(0)}}@keyframes cardSoftIn{0%{opacity:.72;transform:translateY(6px)}100%{opacity:1;transform:translateY(0)}}.summary-box{animation:summaryFadeUp .45s ease both}.summary-box:nth-child(2){animation-delay:.05s}.summary-box:nth-child(3){animation-delay:.1s}.summary-box:nth-child(4){animation-delay:.15s}.mini-bar-fill{transform-origin:left center;animation:miniBarGrow .75s cubic-bezier(.22,.8,.2,1) both}.legend-item{animation:summaryFadeUp .35s ease both}.chart canvas{transition:filter .25s ease}.chart.chart-fx canvas{filter:saturate(1.06);animation:donutPulse 1.3s ease both}@keyframes miniBarGrow{0%{transform:scaleX(0);opacity:.55}100%{transform:scaleX(1);opacity:1}}@keyframes summaryFadeUp{0%{opacity:0;transform:translateY(10px)}100%{opacity:1;transform:translateY(0)}}@keyframes donutPulse{0%{filter:saturate(.95) brightness(.98)}60%{filter:saturate(1.08) brightness(1.02)}100%{filter:saturate(1) brightness(1)}}.legend.legend-hidden{opacity:0;transform:translateY(8px);filter:blur(1px)}.legend.legend-show{opacity:1;transform:translateY(0);filter:blur(0);transition:opacity .36s ease,transform .36s ease,filter .36s ease}@media(max-width:1180px){.kpis{grid-template-columns:repeat(3,1fr)}.asset-summary-grid{grid-template-columns:repeat(2,1fr)}}@media(max-width:1023px){.sidebar{display:none}.main{margin-left:0;width:100%;padding:18px}.kpis{grid-template-columns:repeat(2,1fr)}.dash-grid,.report-grid{grid-template-columns:1fr}.chart-legend-wrap{grid-template-columns:1fr}.asset-summary-grid{grid-template-columns:repeat(2,1fr)}}@media(max-width:767px){body{padding-bottom:var(--bottom)}.main{padding:14px 14px 96px}.topbar{display:grid;gap:14px}.title h2{font-size:23px}.actions{display:grid;grid-template-columns:1fr auto}.actions .desktop-add{display:none}.kpis{display:flex;overflow-x:auto;gap:12px;padding-bottom:5px}.kpi{min-width:235px}.card{border-radius:18px;padding:15px}.chart{height:238px}.chart.year{height:300px}.table-card{display:none}.mobile-list{display:grid;gap:10px}.toolbar,.tool-left,.tool-right{display:grid;width:100%}.search,.select,.input{width:100%;min-width:0}.recent-grid,.asset-summary-grid{grid-template-columns:1fr}.form{grid-template-columns:1fr}.modal-bg{align-items:flex-end;padding:0}.modal{border-radius:26px 26px 0 0;max-height:94vh}.modal-actions{position:sticky;bottom:0;background:var(--card);border-top:1px solid var(--line);padding-top:14px}.modal-actions .btn{flex:1}.bottom-nav{position:fixed;left:0;right:0;bottom:0;height:var(--bottom);display:grid;grid-template-columns:repeat(4,1fr);z-index:50;background:rgba(255,255,255,.94);backdrop-filter:blur(18px);border-top:1px solid var(--line);padding:8px}.bottom-btn{border:0;background:transparent;color:var(--muted);font-weight:800;font-size:11px;display:grid;place-items:center;gap:2px}.bottom-btn svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}.bottom-btn.active{color:var(--blue)}.fab{display:grid;place-items:center;position:fixed;right:18px;bottom:92px;width:58px;height:58px;border-radius:50%;border:0;background:linear-gradient(135deg,var(--blue),var(--purple));color:#fff;font-size:28px;box-shadow:0 16px 38px rgba(37,99,235,.36);z-index:55}.summary-breakdown{grid-template-columns:1fr}.toast{left:14px;right:14px;bottom:92px}}
+
+/* Mobile refinement: keep layout within 320-430px CSS width */
+@media(max-width:767px){
+  :root{--bottom:76px;--radius:18px}
+  body{background:var(--bg)}
+  .main{width:100%;max-width:100vw;margin-left:0;padding:12px 12px 92px;overflow-x:hidden}
+  .topbar{display:grid;grid-template-columns:1fr;gap:12px;margin-bottom:14px}
+  .title h2{font-size:22px;line-height:1.18;letter-spacing:-.025em}
+  .title p{font-size:12px;line-height:1.45;margin-top:5px}
+  .actions{display:grid;grid-template-columns:1fr;gap:10px;justify-content:stretch;width:100%}
+  .month{width:100%;justify-content:space-between;border-radius:16px;padding:5px;background:rgba(255,255,255,.96)}
+  .month span{min-width:0;flex:1;font-size:13px}
+  .month button{min-width:40px;height:38px}
+  .kpis{display:grid;grid-template-columns:1fr 1fr;gap:10px;overflow:visible;padding:0}
+  .kpi{min-width:0;min-height:112px;padding:14px;border-radius:18px}
+  .kpi-head{margin-bottom:12px}.kpi b,.kpi-value{font-size:17px!important;line-height:1.2}.kpi-label{font-size:12px}.kpi-sub{font-size:11px!important}
+  .dash-grid,.report-grid{grid-template-columns:1fr;gap:12px;margin-top:12px}
+  .card{padding:14px;border-radius:18px;box-shadow:0 10px 24px rgba(15,23,42,.07)}
+  .card-title{display:grid;grid-template-columns:1fr;align-items:start;gap:10px;margin-bottom:12px}
+  .card-title h3{font-size:15px;line-height:1.3}
+  .card-title>span{justify-self:start;max-width:100%}
+  .year-actions,.report-month-nav{max-width:100%;display:flex;gap:6px;padding:4px;border-radius:18px;overflow-x:auto;scrollbar-width:none}
+  .year-actions::-webkit-scrollbar,.report-month-nav::-webkit-scrollbar{display:none}
+  #yearLabel,#reportYearLabel,#reportMonth{min-width:96px;height:30px;padding:0 11px;font-size:12px;white-space:nowrap}
+  #reportMonth{min-width:112px}
+  .icon-btn{width:30px;height:30px;min-height:30px;flex:0 0 30px}
+  .icon-btn svg{width:16px;height:16px}
+  .chart{height:230px;min-height:230px}.chart.year{height:280px;min-height:280px}
+  .chart-legend-wrap{display:grid;grid-template-columns:1fr;gap:12px;align-items:start}
+  .legend{gap:8px}.legend-item{padding:9px;border-radius:13px}.legend-name,.legend-value{font-size:11px}
+  .recent-tools{width:100%;display:grid;grid-template-columns:1fr 1fr;gap:8px;justify-content:stretch}.recent-tools .select{width:100%}
+  .recent-grid{grid-template-columns:1fr;gap:10px}.recent-col{gap:10px}
+  .item{grid-template-columns:1fr;gap:8px;padding:12px;border-radius:15px}.amount{text-align:left;font-size:13px}.item-title{white-space:normal;line-height:1.35}.meta{font-size:11px;gap:6px}
+  .toolbar{display:grid;grid-template-columns:1fr;gap:10px}.tool-left,.tool-right{display:grid;grid-template-columns:1fr;width:100%;gap:8px}.search,.select,.input{width:100%;min-width:0}
+  .date-range{display:grid;grid-template-columns:1fr 1fr;gap:8px}.date-range.hide{display:none}
+  .asset-summary-grid{grid-template-columns:1fr;gap:12px}.asset-summary{gap:10px}.asset-name{font-size:16px}.asset-value{font-size:19px}.asset-stats{grid-template-columns:1fr 1fr;gap:8px}.stat{padding:9px}
+  .summary-breakdown{grid-template-columns:1fr;gap:12px}.summary-box{padding:12px;border-radius:16px}.summary-box-head{align-items:flex-start}.summary-total{font-size:12px;text-align:right}
+  .modal{width:100%;border-radius:22px 22px 0 0}.modal-head{padding:16px}.modal-body{padding:16px}.form{grid-template-columns:1fr;gap:12px}.modal-actions{padding:0 16px 16px}
+  .bottom-nav{height:76px;padding:7px 6px calc(7px + env(safe-area-inset-bottom));background:rgba(255,255,255,.96)}
+  .bottom-btn{font-size:10px;border-radius:14px}.bottom-btn svg{width:19px;height:19px}.fab{right:14px;bottom:88px;width:54px;height:54px}
+}
+@media(max-width:390px){
+  .main{padding-left:10px;padding-right:10px}.kpis{grid-template-columns:1fr}.chart{height:220px}.chart.year{height:260px}
+  .recent-tools{grid-template-columns:1fr}.asset-stats{grid-template-columns:1fr}.date-range{grid-template-columns:1fr}
+}
+
+
+/* Mobile header and requested mobile behavior */
+.mobile-app-header{display:none}
+body.modal-open{overflow:hidden;touch-action:none}
+@media(max-width:767px){
+  .mobile-app-header{position:sticky;top:0;z-index:45;display:flex;align-items:center;gap:12px;padding:12px 14px;background:rgba(255,255,255,.94);backdrop-filter:blur(18px);border-bottom:1px solid var(--line);box-shadow:0 10px 28px rgba(15,23,42,.06)}
+  .mobile-logo{width:38px;height:38px;border-radius:14px;background:linear-gradient(135deg,var(--blue),var(--purple));color:#fff;display:grid;place-items:center;font-weight:900;box-shadow:0 10px 24px rgba(37,99,235,.24);flex:0 0 38px}
+  .mobile-app-header b{display:block;font-size:15px;letter-spacing:-.02em;line-height:1.15}
+  .mobile-app-header span{display:block;margin-top:3px;color:var(--muted);font-size:11px;font-weight:700}
+  .topbar{display:none!important}
+  .desktop-add{display:none!important}
+  .fab{display:grid!important}
+  .chart.year{height:270px;min-height:270px}
+  .summary-box.mobile-empty{display:none!important}
+}
+
+
+/* Modern app logo and mobile refinements */
+.logo,.mobile-logo{display:grid;place-items:center}.app-logo-svg{width:24px;height:24px;stroke:currentColor;stroke-width:2.2;fill:none;stroke-linecap:round;stroke-linejoin:round}.mobile-logo .app-logo-svg{width:22px;height:22px}
+.note-line{display:flex;gap:6px;align-items:flex-start;color:var(--muted);font-size:12px;line-height:1.35;margin-top:6px}.note-line b{color:var(--text);font-size:11px;white-space:nowrap}.note-line span{overflow:hidden;text-overflow:ellipsis}
+@media(max-width:767px){
+  .desktop-add{display:none!important}
+  .asset-summary .asset-stats .stat:nth-child(4){display:none!important}
+  .asset-summary .asset-stats{grid-template-columns:1fr 1fr}
+  .note-line{font-size:11px;margin-top:7px}.note-line span{white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+}
+
+
+/* Requested transaction and asset mobile refinements */
+.recent-side{display:grid;gap:6px;justify-items:end;align-content:center;min-width:145px}.recent-note{max-width:170px;color:var(--muted);font-size:11px;line-height:1.35;text-align:right;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+@media(max-width:767px){
+  #view-transactions .tool-right{display:none!important}
+  .asset-summary .asset-stats .stat:nth-child(4){display:block!important}
+  .recent-item{grid-template-columns:1fr!important;color:var(--text)}
+  .recent-item .item-title{font-size:12px;line-height:1.3;font-weight:750}
+  .recent-item .badge{display:none!important}
+  .recent-item .recent-side{min-width:0;justify-items:start;gap:6px}
+  .recent-item .recent-note{text-align:left;max-width:100%;font-size:11px;color:var(--muted)}
+  .recent-item .amount{color:var(--text)!important;text-align:left;font-size:12px}
+}
+
+
+/* Final mobile color adjustments */
+@media(max-width:767px){
+  .mobile-app-header{background:#007bff!important;color:#fff!important}
+  .mobile-app-header span{color:rgba(255,255,255,.88)!important}
+  .mobile-logo{background:rgba(255,255,255,.18)!important;color:#fff!important;box-shadow:0 10px 24px rgba(0,123,255,.26)!important}
+  .mobile-logo .app-logo-svg{color:#fff!important;stroke:#fff!important}
+  .recent-item .recent-rank{background:transparent!important;border:none!important;padding:0!important;min-width:auto!important;height:auto!important;margin-right:6px!important;font-size:11px!important;font-weight:900!important}
+  .recent-item .recent-rank.INCOME,.recent-item .badge.INCOME{color:var(--green)!important}
+  .recent-item .recent-rank.EXPENSE,.recent-item .badge.EXPENSE{color:var(--red)!important}
+  .recent-item .recent-rank.INVEST,.recent-item .badge.INVEST{color:var(--purple)!important}
+  .recent-item .recent-rank.DIVEST,.recent-item .badge.DIVEST{color:var(--cyan)!important}
+  .recent-item .badge{display:inline-flex!important;background:transparent!important;border:none!important;padding:0!important;font-size:11px!important;font-weight:900!important}
+}
+
+/* Mobile popup and transaction badge refinements */
+@media(max-width:767px){
+  #txnMobile .badge{display:inline-flex!important;background:transparent!important;border:none!important;padding:0!important;font-size:11px!important;font-weight:900!important}
+  #txnMobile .badge.INCOME{color:var(--green)!important}
+  #txnMobile .badge.EXPENSE{color:var(--red)!important}
+  #txnMobile .badge.INVEST{color:var(--purple)!important}
+  #txnMobile .badge.DIVEST{color:var(--cyan)!important}
+  .modal{max-height:88vh!important;border-radius:22px 22px 0 0!important}
+  .modal-head{padding:13px 15px!important}.modal-head h3{font-size:16px!important}.modal-head .btn{min-height:36px;padding:0 11px;font-size:13px}
+  .modal-body{padding:14px 15px!important}.form{gap:10px!important}
+  .field label{font-size:12px!important}.input,.select,.textarea{min-height:38px!important;border-radius:12px!important;font-size:13px!important;padding-left:11px!important;padding-right:11px!important}
+  .textarea{min-height:68px!important;padding-top:10px!important;padding-bottom:10px!important}
+  .modal-actions{padding:0 15px 14px!important;gap:8px}.modal-actions .btn{min-height:39px!important;font-size:13px!important;border-radius:12px!important}
+  #fNgay{font-size:13px!important}
+  .amount-field{order:6}.asset-fields{order:7}.field.full:has(#fGhiChu){order:8}
+  body.editing-txn .fee-field{display:none!important}
+}
+
+
+/* mobile modal 2-column and pc remove month */
+@media(max-width:767px){
+ .modal-body{padding:16px!important}
+ .form{display:grid!important;grid-template-columns:1fr 1fr!important;gap:10px!important}
+ .field.full,.asset-fields .field.full{grid-column:1/-1!important}
+ .field label{font-size:11px!important}
+ .input,.select,.textarea{font-size:12px!important;min-height:36px!important}
+ .textarea{min-height:64px!important}
+ .modal-actions{padding:12px 15px 18px!important;border-top:1px solid var(--line)!important}
+ .modal-actions .btn{min-height:40px!important}
+}
+@media(min-width:768px){
+ .month,#monthDisplay{display:none!important}
+}
+
+@media(max-width:767px){
+  #fNhom{order:4}
+  .field.full:has(#fCon){grid-column:auto!important;order:5}
+  .amount-field{grid-column:1/-1!important;order:6!important}
+}
+
+/* Mobile popup final: centered modal and formatted money input */
+@media(max-width:767px){
+  .modal-bg.show{align-items:center!important;justify-content:center!important;padding:12px!important}
+  .modal{width:min(94vw,460px)!important;max-height:88vh!important;border-radius:22px!important;overflow:auto!important}
+  .modal-head{padding:12px 14px!important}.modal-head h3{font-size:15px!important;line-height:1.2!important}
+  .modal-body{padding:14px!important}.form{grid-template-columns:1fr 1fr!important;gap:9px!important;align-items:start!important}
+  .field{min-width:0!important}.field label{font-size:11px!important;line-height:1.2!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .input,.select,.textarea{width:100%!important;min-width:0!important;min-height:36px!important;font-size:12px!important;border-radius:11px!important;padding:0 10px!important}
+  .textarea{min-height:60px!important;padding-top:9px!important;padding-bottom:9px!important;resize:none!important}
+  .field.full,.asset-fields .field.full{grid-column:1/-1!important}
+  .field.full:has(#fCon){grid-column:auto!important;order:5!important}
+  .amount-field{grid-column:1/-1!important;order:6!important}
+  .asset-fields{display:contents!important;order:7!important}.asset-fields.hide{display:none!important}
+  .field.full:has(#fGhiChu){grid-column:1/-1!important;order:8!important}
+  .modal-actions{padding:12px 14px 16px!important;border-top:1px solid var(--line)!important;gap:8px!important}
+  .modal-actions .btn{min-height:38px!important;font-size:12px!important;padding:0 10px!important}
+}
+
+
+/* Mobile overview recent transaction field order */
+@media(max-width:767px){
+  #view-dashboard .recent-item > div:first-child{display:flex!important;flex-direction:column!important;min-width:0!important}
+  #view-dashboard .recent-item .meta{order:1!important;margin-bottom:5px!important;font-size:11px!important}
+  #view-dashboard .recent-item .item-title{order:2!important;margin:0!important;font-size:11px!important;line-height:1.35!important;font-weight:750!important;white-space:normal!important}
+}
+
+
+/* Mobile overview recent item: rank/date/badge first, amount beside note */
+.recent-top{display:flex;align-items:center;gap:7px;flex-wrap:wrap;color:var(--muted);font-size:12px}.recent-main{min-width:0}
+@media(max-width:767px){
+  #view-dashboard .recent-item{grid-template-columns:1fr auto!important;align-items:start!important;gap:10px!important}
+  #view-dashboard .recent-main{display:flex!important;flex-direction:column!important;min-width:0!important}
+  #view-dashboard .recent-top{order:1!important;margin-bottom:5px!important;font-size:11px!important;gap:6px!important}
+  #view-dashboard .recent-item .item-title{order:2!important;margin:0!important;font-size:11px!important;line-height:1.35!important;font-weight:750!important;white-space:normal!important}
+  #view-dashboard .recent-side{display:grid!important;grid-template-columns:1fr auto!important;align-items:center!important;gap:8px!important;min-width:128px!important;justify-items:end!important}
+  #view-dashboard .recent-note{font-size:11px!important;text-align:left!important;max-width:90px!important;line-height:1.3!important}
+  #view-dashboard .recent-side .amount{text-align:right!important;white-space:nowrap!important;font-size:12px!important;color:var(--text)!important}
+  #view-dashboard .recent-item .recent-rank{background:transparent!important;border:none!important;padding:0!important;min-width:auto!important;height:auto!important;margin-right:0!important;font-size:11px!important;font-weight:900!important}
+}
+
+
+/* Mobile overview recent item final row layout: title row spans full width, note row 3 col 1, amount row 3 col 2 */
+@media(max-width:767px){
+  #view-dashboard .recent-item{display:grid!important;grid-template-columns:1fr auto!important;gap:6px 10px!important;align-items:start!important}
+  #view-dashboard .recent-main{display:contents!important}
+  #view-dashboard .recent-top{grid-column:1/-1!important;grid-row:1!important;display:flex!important;align-items:center!important;gap:6px!important;margin-bottom:0!important}
+  #view-dashboard .recent-item .item-title{grid-column:1/-1!important;grid-row:2!important;margin:0!important;font-size:11px!important;line-height:1.35!important;font-weight:750!important;white-space:normal!important;min-width:0!important}
+  #view-dashboard .recent-side{grid-column:1/-1!important;grid-row:3!important;display:grid!important;grid-template-columns:1fr auto!important;align-items:center!important;gap:10px!important;min-width:0!important;justify-items:stretch!important;width:100%!important}
+  #view-dashboard .recent-note{grid-column:1!important;text-align:left!important;max-width:none!important;font-size:11px!important;line-height:1.35!important;color:var(--muted)!important;min-width:0!important}
+  #view-dashboard .recent-side .amount{grid-column:2!important;text-align:right!important;white-space:nowrap!important;font-size:12px!important;color:var(--text)!important;align-self:center!important}
+}
+
+
+/* Mobile dashboard KPI order: row1 cash/assets, row2 income/expense, row3 investment/gain */
+@media(max-width:767px){
+  #view-dashboard .kpis{
+    display:grid!important;
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    gap:10px!important;
+    overflow:visible!important;
+    padding:0!important;
+  }
+  #view-dashboard .kpi{
+    min-width:0!important;
+    min-height:104px!important;
+    padding:12px!important;
+    border-radius:16px!important;
+  }
+  #view-dashboard .kpi:nth-child(1){order:1!important}
+  #view-dashboard .kpi:nth-child(5){order:2!important}
+  #view-dashboard .kpi:nth-child(2){order:3!important}
+  #view-dashboard .kpi:nth-child(3){order:4!important}
+  #view-dashboard .kpi:nth-child(4){order:5!important}
+  #view-dashboard .kpi:nth-child(6){order:6!important}
+  #view-dashboard .kpi-head{margin-bottom:9px!important;align-items:flex-start!important;gap:6px!important}
+  #view-dashboard .kpi-label{font-size:11px!important;line-height:1.25!important;display:block!important}
+  #view-dashboard .kpi-value{font-size:15px!important;line-height:1.18!important;letter-spacing:-.035em!important;word-break:break-word!important}
+  #view-dashboard .kpi-sub{font-size:10px!important;line-height:1.25!important;margin-top:5px!important}
+  #view-dashboard .kpi-ico svg{width:17px!important;height:17px!important}
+}
+@media(max-width:360px){
+  #view-dashboard .kpis{gap:8px!important}
+  #view-dashboard .kpi{padding:10px!important;min-height:100px!important}
+  #view-dashboard .kpi-value{font-size:14px!important}
+}
+
+
+/* Mobile recent transactions: reduce gap between category row and note row */
+@media(max-width:767px){
+  #view-dashboard .recent-item{
+    gap:3px 8px!important;
+  }
+  #view-dashboard .recent-item .item-title{
+    margin:0!important;
+    padding-bottom:0!important;
+    line-height:1.25!important;
+  }
+  #view-dashboard .recent-side{
+    margin-top:-2px!important;
+    gap:4px!important;
+    align-items:start!important;
+  }
+  #view-dashboard .recent-note{
+    margin-top:0!important;
+    line-height:1.18!important;
+    font-size:11px!important;
+  }
+  #view-dashboard .recent-side .amount{
+    align-self:start!important;
+    padding-top:0!important;
+  }
+}
+
+
+/* Amount realtime preview beside header label only */
+.amount-label{display:flex!important;align-items:center!important;justify-content:space-between!important;gap:10px!important;width:100%!important}
+.money-preview{font-size:11px!important;font-weight:900!important;color:var(--blue)!important;text-align:right!important;white-space:nowrap!important;background:transparent!important;border:0!important;box-shadow:none!important;padding:0!important;margin:0!important;border-radius:0!important;min-height:auto!important;line-height:1.2!important}
+.money-preview.empty{color:var(--muted)!important}
+
+</style>
+</head>
+<body>
+<div class="app"><header class="mobile-app-header"><div class="mobile-logo"><svg class="app-logo-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10.5 12 4l8 6.5"/><path d="M6 10v8.5A1.5 1.5 0 0 0 7.5 20h9A1.5 1.5 0 0 0 18 18.5V10"/><path d="M9 20v-5.5a3 3 0 0 1 6 0V20"/><path d="M8.5 11.5h7"/></svg></div><div><b>Quản lý tài sản gia đình</b><span>Theo dõi tài chính, tài sản và đầu tư</span></div></header><aside class="sidebar"><div class="brand"><div class="logo"><svg class="app-logo-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10.5 12 4l8 6.5"/><path d="M6 10v8.5A1.5 1.5 0 0 0 7.5 20h9A1.5 1.5 0 0 0 18 18.5V10"/><path d="M9 20v-5.5a3 3 0 0 1 6 0V20"/><path d="M8.5 11.5h7"/></svg></div><div><h1>Tài chính gia đình</h1><p>Chi tiêu, tài sản, đầu tư</p></div></div><nav class="nav" id="desktopNav"></nav><div class="cash-card"><small>Tiền hiện có</small><b id="miniBalance">0 ₫</b><span>Tổng tiền khả dụng</span></div></aside><main class="main"><header class="topbar"><div class="title"><h2 id="pageTitle">Tổng quan</h2><p id="pageSubtitle">Theo dõi dòng tiền và tài sản gia đình trong một nơi.</p></div><div class="actions"><div class="month"><button id="prevMonth">‹</button><span id="monthDisplay">Tháng</span><button id="nextMonth">›</button></div><button class="btn btn-primary desktop-add" id="addHeaderBtn">＋ Thêm giao dịch</button></div></header>
+<section class="view active" id="view-dashboard"><div class="kpis" id="kpiGrid"></div><div class="dash-grid"><div class="card full"><div class="card-title"><h3>Thu chi từng tháng trong năm</h3><span class="year-actions"><span id="yearLabel"></span><button class="icon-btn" id="dashPrevYear" type="button" title="Năm trước"><svg viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></svg></button><button class="icon-btn" id="dashCurrentYear" type="button" title="Năm hiện tại"><svg viewBox="0 0 24 24"><path d="M12 5v14"/><path d="M5 12h14"/></svg></button><button class="icon-btn" id="dashNextYear" type="button" title="Năm tiếp theo"><svg viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg></button></span></div><div class="chart year"><canvas id="yearlyChart"></canvas></div></div><div class="card"><div class="card-title"><h3>Chi tiêu theo nhóm</h3><span id="expenseLabel"></span></div><div class="chart-legend-wrap"><div class="chart"><canvas id="expenseChart"></canvas></div><div class="legend" id="expenseLegend"></div></div></div><div class="card"><div class="card-title"><h3>Cơ cấu tài sản</h3><span>Giá trị hiện tại</span></div><div class="chart-legend-wrap"><div class="chart"><canvas id="assetChart"></canvas></div><div class="legend" id="assetLegend"></div></div></div><div class="card full"><div class="card-title"><h3>Giao dịch gần đây</h3><span class="recent-tools"><select class="select mini-select" id="recentLimit"><option value="10" selected>10 dòng</option><option value="20">20 dòng</option><option value="30">30 dòng</option><option value="40">40 dòng</option><option value="50">50 dòng</option></select><select class="select mini-select" id="recentType"><option value="" selected>Tất cả</option><option value="INCOME">Thu nhập</option><option value="EXPENSE">Chi tiêu</option><option value="INVEST">Đầu tư</option><option value="DIVEST">Thu hồi</option></select></span></div><div class="recent-grid" id="recentList"></div></div></div></section>
+<section class="view" id="view-transactions"><div class="toolbar"><div class="tool-left"><input class="input search" id="txnSearch" type="search" placeholder="Tìm giao dịch, ghi chú, tài sản..."><select class="select" id="txnType"><option value="">Tất cả loại giao dịch</option><option value="INCOME">Thu nhập</option><option value="EXPENSE">Chi tiêu</option><option value="INVEST">Đầu tư</option><option value="DIVEST">Thu hồi tài sản</option></select><select class="select" id="txnRange"><option value="ALL" selected>Hiển thị đầy đủ</option><option value="1M">1 tháng gần nhất</option><option value="3M">3 tháng gần nhất</option><option value="6M">6 tháng gần nhất</option><option value="1Y">1 năm gần nhất</option><option value="CUSTOM">Tùy chỉnh</option></select><div class="date-range hide" id="txnDateRange"><input class="input" id="txnFromDate" type="date"><input class="input" id="txnToDate" type="date"></div></div><div class="tool-right"><button class="btn btn-primary" type="button" onclick="openForm()">＋ Thêm giao dịch</button></div></div><div class="card table-card"><div class="table-wrap"><table><thead><tr><th>Ngày</th><th>Loại</th><th>Nhóm</th><th>Hạng mục</th><th>Tài sản</th><th>Ghi chú</th><th>Số tiền</th><th></th></tr></thead><tbody id="txnTable"></tbody></table></div></div><div class="mobile-list" id="txnMobile"></div></section>
+<section class="view" id="view-assets"><div class="toolbar"><div class="tool-left"><input class="input search" id="assetSearch" type="search" placeholder="Tìm tài sản..."><select class="select" id="assetType"><option value="">Tất cả tài sản</option><option>GOLD</option><option>STOCK</option><option>LAND</option><option>INSURANCE</option><option>SAVING</option></select></div></div><div class="asset-summary-grid" id="assetSummaryGrid"></div><div class="asset-detail" id="assetDetail"></div></section>
+<section class="view" id="view-reports"><div class="card report-section-card" style="margin-bottom:16px"><div class="card-title"><h3>Tóm tắt tháng theo nhóm</h3><span class="report-month-nav"><span id="reportMonth"></span><button class="icon-btn" id="reportPrevMonth" type="button" title="Tháng trước"><svg viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></svg></button><button class="icon-btn" id="reportCurrentMonth" type="button" title="Tháng hiện tại"><svg viewBox="0 0 24 24"><path d="M12 5v14"/><path d="M5 12h14"/></svg></button><button class="icon-btn" id="reportNextMonth" type="button" title="Tháng tiếp theo"><svg viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg></button></span></div><div class="summary-breakdown" id="summaryBreakdown"></div></div><div class="report-grid"><div class="card"><div class="card-title"><h3>Thu chi 12 tháng</h3><span class="year-actions"><span id="reportYearLabel"></span><button class="icon-btn" id="reportPrevYear" type="button" title="Năm trước"><svg viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></svg></button><button class="icon-btn" id="reportCurrentYear" type="button" title="Năm hiện tại"><svg viewBox="0 0 24 24"><path d="M12 5v14"/><path d="M5 12h14"/></svg></button><button class="icon-btn" id="reportNextYear" type="button" title="Năm tiếp theo"><svg viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg></button></span></div><div class="chart"><canvas id="reportYearChart"></canvas></div></div><div class="card"><div class="card-title"><h3>Cơ cấu tài sản hiện tại</h3><span>Hiển thị số tiền từng phần</span></div><div class="chart-legend-wrap"><div class="chart"><canvas id="assetDonutReport"></canvas></div><div class="legend" id="assetReportLegend"></div></div></div></div></section>
+</main></div><button class="fab" type="button" onclick="openForm()">＋</button><nav class="bottom-nav" id="bottomNav"></nav>
+<div class="modal-bg" id="modalBg"><div class="modal"><div class="modal-head"><h3 id="modalTitle">Thêm giao dịch</h3><button class="btn btn-soft" type="button" onclick="closeForm()">✕</button></div><form id="txnForm"><div class="modal-body"><div class="form"><div class="field"><label>Ngày</label><input class="input" id="fNgay" type="date" required></div><div class="field amount-field"><label class="amount-label">Số tiền <span class="money-preview" id="fSoTienPreview">0 ₫</span></label><input class="input" id="fSoTien" type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off" required></div><div class="field"><label>Loại lớn</label><select class="select" id="fLoai" required></select></div><div class="field"><label>Nhóm danh mục</label><select class="select" id="fNhom" required></select></div><div class="field full"><label>Hạng mục con</label><select class="select" id="fCon" required></select></div><div class="asset-fields hide" id="assetFields"><div class="field"><label>Tên tài sản</label><input class="input" id="fTenTaiSan" placeholder="Vàng SJC, FPT..."></div><div class="field"><label>Số lượng</label><input class="input" id="fSoLuong" type="number" min="0" step="0.0001"></div><div class="field"><label>Đơn vị</label><input class="input" id="fDonVi" placeholder="cây, CP, lô..."></div><div class="field"><label>Đơn giá</label><input class="input" id="fDonGia" type="number" min="0" step="1000"></div><div class="field full fee-field"><label>Phí</label><input class="input" id="fPhi" type="number" min="0" step="1000" value="0"></div></div><div class="field full"><label>Ghi chú</label><textarea class="textarea" id="fGhiChu" placeholder="Nội dung cụ thể sẽ ghi ở đây..."></textarea></div></div></div><div class="modal-actions"><button class="btn btn-danger" type="button" id="deleteBtn" onclick="deleteCurrent()">Xóa</button><button class="btn btn-soft" type="button" onclick="closeForm()">Hủy</button><button class="btn btn-primary" type="submit">Lưu giao dịch</button></div></form></div></div><div class="toast" id="toast"></div>
+<script>
+/*
+  Firebase config only. Do NOT put allowed emails in HTML.
+  Real access control must be enforced by Firestore Security Rules.
+*/
+const FIREBASE_CONFIG={
+  apiKey: "AIzaSyBIuqYBLk4GwpTEBpRLNHSDI41TWDsZNIs",
+  authDomain: "quanlychitieu-912c3.firebaseapp.com",
+  projectId: "quanlychitieu-912c3",
+  storageBucket: "quanlychitieu-912c3.firebasestorage.app",
+  messagingSenderId: "920220207130",
+  appId: "1:920220207130:web:61aec0b9081fe3ea0729a3",
+  measurementId: "G-1290WPZRWZ"
+};
+const FIREBASE_COLLECTIONS={danhMuc:'DanhMuc',giaoDich:'GiaoDich',taiSan:'TaiSan'};
+let FB={app:null,auth:null,db:null,ready:false,user:null};
+const FIREBASE_CACHE_KEY='family_finance_firestore_cache_v1';
+const FIREBASE_RECENT_LIMIT=300;
+function saveFirebaseCache(){try{localStorage.setItem(FIREBASE_CACHE_KEY,JSON.stringify({danhMuc:state.danhMuc||[],giaoDich:state.giaoDich||[],taiSan:state.taiSan||[],savedAt:Date.now()}))}catch(e){console.warn('Không lưu được cache Firebase',e)}}
+function loadFirebaseCache(){try{const raw=localStorage.getItem(FIREBASE_CACHE_KEY);return raw?JSON.parse(raw):null}catch(e){return null}}
+function applyFirebaseCache(){const c=loadFirebaseCache();if(!c)return false;state.danhMuc=Array.isArray(c.danhMuc)?c.danhMuc:state.danhMuc;state.giaoDich=Array.isArray(c.giaoDich)?c.giaoDich.map(normalizeFirebaseTxn):state.giaoDich;state.taiSan=Array.isArray(c.taiSan)?c.taiSan.map(normalizeFirebaseAsset):state.taiSan;return !!(state.danhMuc.length||state.giaoDich.length||state.taiSan.length)}
+function hasFirebaseConfig(){return FIREBASE_CONFIG.apiKey&&!FIREBASE_CONFIG.apiKey.includes('PASTE_')&&FIREBASE_CONFIG.projectId&&!FIREBASE_CONFIG.projectId.includes('PASTE_')}
+function initFirebase(){if(FB.ready)return;FB.app=firebase.initializeApp(FIREBASE_CONFIG);FB.auth=firebase.auth();FB.db=firebase.firestore();try{FB.db.enablePersistence({synchronizeTabs:true}).catch(e=>console.warn('Firestore persistence không bật được:',e&&e.code?e.code:e))}catch(e){console.warn('Firestore persistence error:',e)}FB.ready=true}
+async function ensureFirebaseUser(){return new Promise((resolve,reject)=>{const unsub=FB.auth.onAuthStateChanged(async user=>{unsub();try{if(user){FB.user=user;resolve(user);return}const provider=new firebase.auth.GoogleAuthProvider();provider.setCustomParameters({prompt:'select_account'});const result=await FB.auth.signInWithPopup(provider);FB.user=result.user;resolve(result.user)}catch(e){console.error('Firebase login error:',e);reject(e)}})})}
+async function loadInitialDataFromFirebase(){
+  if(!hasFirebaseConfig()){
+    toast('Firebase chưa được cấu hình. Vui lòng cập nhật FIREBASE_CONFIG trong source.');
+    state.danhMuc=[];state.giaoDich=[];state.taiSan=[];
+    fillLevel1();renderAll();
+    return;
+  }
+  try{
+    const hasCache=applyFirebaseCache();
+    if(hasCache){fillLevel1();renderAll();toast('Đang đồng bộ Firebase...')}
+    else{toast('Đang đăng nhập Firebase...')}
+    initFirebase();
+    await ensureFirebaseUser();
+    if(!hasCache)toast('Đang tải dữ liệu Firebase...');
+    const [danhMuc,giaoDich,taiSan]=await Promise.all([
+      readCollection(FIREBASE_COLLECTIONS.danhMuc),
+      readCollection(FIREBASE_COLLECTIONS.giaoDich),
+      readCollection(FIREBASE_COLLECTIONS.taiSan)
+    ]);
+    state.danhMuc=danhMuc;
+    state.giaoDich=giaoDich.map(normalizeFirebaseTxn);
+    state.taiSan=taiSan.map(normalizeFirebaseAsset);
+    fillLevel1();renderAll();saveFirebaseCache();toast('Đã tải dữ liệu Firebase')
+  }catch(e){console.error(e);toast(e.message||'Không tải được Firebase')}
+}
+async function readCollection(name){
+  let ref=FB.db.collection(name);
+  if(name===FIREBASE_COLLECTIONS.giaoDich){
+    ref=ref.orderBy('ngay','desc').limit(FIREBASE_RECENT_LIMIT);
+  }
+  const snap=await ref.get();
+  return snap.docs.map(doc=>({id:doc.data().id||doc.id,...doc.data()}));
+}
+async function syncTaiSanToFirebase(){if(!FB.ready)return;const col=FB.db.collection(FIREBASE_COLLECTIONS.taiSan);const snap=await col.get();const ids=new Set(state.taiSan.map(a=>String(a.id)));const batch=FB.db.batch();snap.docs.forEach(d=>{if(!ids.has(d.id))batch.delete(d.ref)});state.taiSan.forEach(a=>batch.set(col.doc(String(a.id)),a,{merge:true}));await batch.commit()}
+function normalizeFirebaseTxn(t){return {...t,so_tien:Number(t.so_tien||0),so_luong:Number(t.so_luong||0),don_gia:Number(t.don_gia||0),phi:Number(t.phi||0),created_at:toMillis(t.created_at),updated_at:toMillis(t.updated_at)}}
+function normalizeFirebaseAsset(a){return {...a,so_luong:Number(a.so_luong||0),tong_gia_von:Number(a.tong_gia_von||0),gia_von_binh_quan:Number(a.gia_von_binh_quan||0),gia_hien_tai:Number(a.gia_hien_tai||0),gia_tri_hien_tai:Number(a.gia_tri_hien_tai||0),lai_lo_tam_tinh:Number(a.lai_lo_tam_tinh||0)}}
+function toMillis(v){if(!v)return 0;if(typeof v==='number')return v;if(v&&typeof v.toMillis==='function')return v.toMillis();const n=Number(v);if(!Number.isNaN(n)&&String(v).trim()!=='')return n;const d=Date.parse(String(v));return Number.isNaN(d)?0:d}
+const ICONS={dashboard:'<svg viewBox="0 0 24 24"><path d="M3 11.5 12 4l9 7.5"/><path d="M5 10.5V20h5v-5h4v5h5v-9.5"/></svg>',transactions:'<svg viewBox="0 0 24 24"><path d="M7 3h10a2 2 0 0 1 2 2v16l-3-2-2 2-2-2-2 2-2-2-3 2V5a2 2 0 0 1 2-2Z"/><path d="M9 8h6M9 12h6M9 16h4"/></svg>',assets:'<svg viewBox="0 0 24 24"><path d="M4 7h16v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7Z"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><path d="M4 12h16"/></svg>',reports:'<svg viewBox="0 0 24 24"><path d="M4 19V5"/><path d="M4 19h16"/><path d="M8 16v-5M12 16V8M16 16v-9"/></svg>'};
+
+const KPI_ICONS={
+  'Tiền hiện có':'<svg viewBox="0 0 24 24"><path d="M4 7h16v10H4z"/><path d="M8 11h.01M16 13h.01"/><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/></svg>',
+  'Thu nhập tháng':'<svg viewBox="0 0 24 24"><path d="M12 19V5"/><path d="m5 12 7-7 7 7"/></svg>',
+  'Chi tiêu tháng':'<svg viewBox="0 0 24 24"><path d="M12 5v14"/><path d="m19 12-7 7-7-7"/></svg>',
+  'Đầu tư tháng':'<svg viewBox="0 0 24 24"><path d="M3 17 9 11l4 4 8-8"/><path d="M14 7h7v7"/></svg>',
+  'Tổng tài sản':'<svg viewBox="0 0 24 24"><path d="M4 7h16v12H4z"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M4 12h16"/></svg>',
+  'Lãi/lỗ tài sản':'<svg viewBox="0 0 24 24"><path d="M4 19V5"/><path d="M4 19h16"/><path d="m7 15 4-4 3 3 5-7"/></svg>'
+};
+
+const now=new Date(),initMonth=now.toISOString().slice(0,7);let charts={};
+const dm=[['Thu nhập','Chính','Lương','INCOME',''],['Thu nhập','Chính','Thưởng','INCOME',''],['Thu nhập','Khác','Thu nhập khác','INCOME',''],['Chi tiêu','Sinh hoạt','Chi tiêu thường ngày','EXPENSE',''],['Chi tiêu','Gia đình','Chi tiêu gia đình','EXPENSE',''],['Chi tiêu','Mua sắm','Mua sắm','EXPENSE',''],['Chi tiêu','Giải trí','Giải trí','EXPENSE',''],['Chi tiêu','Khác','Chi phí khác','EXPENSE',''],['Đầu tư','Vàng','Mua vàng','INVEST','GOLD'],['Đầu tư','Chứng khoán','Mua chứng khoán','INVEST','STOCK'],['Đầu tư','Bất động sản','Mua bất động sản','INVEST','LAND'],['Đầu tư','Tiết kiệm','Gửi tiết kiệm','INVEST','SAVING'],['Đầu tư','Tiết kiệm','Gửi quỹ khẩn cấp','INVEST','SAVING'],['Đầu tư','Bảo hiểm tích lũy','Đóng phí','INVEST','INSURANCE'],['Thu hồi tài sản','Vàng','Bán vàng','DIVEST','GOLD'],['Thu hồi tài sản','Chứng khoán','Bán chứng khoán','DIVEST','STOCK'],['Thu hồi tài sản','Tiết kiệm','Rút quỹ khẩn cấp','DIVEST','SAVING']].map((x,i)=>({id:'DM'+i,loai_lon:x[0],nhom_danh_muc:x[1],hang_muc_con:x[2],loai_giao_dich:x[3],loai_tai_san:x[4]}));
+let state={view:'dashboard',month:initMonth,edit:null,danhMuc:dm,giaoDich:[],taiSan:[],assetDetailType:'',recentLimit:10,recentType:'',dashboardYear:Number(initMonth.slice(0,4)),reportMonth:initMonth,reportYear:Number(initMonth.slice(0,4))};
+function tx(ngay,loai,nhom,con,type,assetType,amount,asset,qty,unit,price,fee,note){return{id:'GD'+Date.now()+Math.random().toString(36).slice(2,6),created_at:Date.now()+Math.random(),ngay,loai_lon:loai,nhom_danh_muc:nhom,hang_muc_con:con,loai_giao_dich:type,loai_tai_san:assetType,so_tien:Number(amount||0),ten_tai_san:asset||'',so_luong:Number(qty||0),don_vi:unit||'',don_gia:Number(price||0),phi:Number(fee||0),ghi_chu:note||''}}
+const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)],fmt=n=>new Intl.NumberFormat('vi-VN',{style:'currency',currency:'VND',maximumFractionDigits:0}).format(Number(n||0));
+document.addEventListener('DOMContentLoaded',()=>{buildNav();bind();fillLevel1();loadInitialDataFromFirebase()});
+function buildNav(){const items=[['dashboard','Tổng quan'],['transactions','Giao dịch'],['assets','Tài sản'],['reports','Báo cáo']];$('#desktopNav').innerHTML=items.map(([id,name],i)=>`<button class="nav-btn ${i===0?'active':''}" data-view="${id}">${ICONS[id]}<span>${name}</span></button>`).join('');$('#bottomNav').innerHTML=items.map(([id,name],i)=>`<button class="bottom-btn ${i===0?'active':''}" data-view="${id}"><span>${ICONS[id]}</span>${name}</button>`).join('')}
+function bind(){$$('[data-view]').forEach(b=>b.onclick=()=>switchView(b.dataset.view));$('#addHeaderBtn').onclick=()=>openForm();$('#prevMonth').onclick=()=>changeMonth(-1);$('#nextMonth').onclick=()=>changeMonth(1);$('#reportPrevMonth').onclick=()=>{state.reportMonth=shiftMonth(state.reportMonth,-1);renderReportSummaryOnly()};$('#reportCurrentMonth').onclick=()=>{state.reportMonth=initMonth;renderReportSummaryOnly()};$('#reportNextMonth').onclick=()=>{state.reportMonth=shiftMonth(state.reportMonth,1);renderReportSummaryOnly()};$('#dashPrevYear').onclick=()=>{state.dashboardYear--;renderDashboardYearOnly()};$('#dashCurrentYear').onclick=()=>{state.dashboardYear=Number(initMonth.slice(0,4));renderDashboardYearOnly()};$('#dashNextYear').onclick=()=>{state.dashboardYear++;renderDashboardYearOnly()};$('#recentLimit').onchange=e=>{state.recentLimit=Number(e.target.value)||10;renderRecent()};$('#recentType').onchange=e=>{state.recentType=e.target.value||'';renderRecent()};$('#reportPrevYear').onclick=()=>{state.reportYear--;renderReportYearOnly()};$('#reportCurrentYear').onclick=()=>{state.reportYear=Number(initMonth.slice(0,4));renderReportYearOnly()};$('#reportNextYear').onclick=()=>{state.reportYear++;renderReportYearOnly()};$('#txnSearch').oninput=renderTransactions;$('#txnType').onchange=renderTransactions;$('#txnRange').onchange=handleTxnRangeChange;$('#txnFromDate').onchange=renderTransactions;$('#txnToDate').onchange=renderTransactions;$('#assetSearch').oninput=renderAssets;$('#assetType').onchange=renderAssets;$('#fLoai').onchange=fillLevel2;$('#fNhom').onchange=fillLevel3;$('#fCon').onchange=toggleAssetFields;$('#txnForm').onsubmit=saveTxn;$('#modalBg').onclick=e=>{if(e.target.id==='modalBg')closeForm()}}
+function changeMonth(delta){let[y,m]=state.month.split('-').map(Number);m+=delta;if(m<1){m=12;y--}if(m>12){m=1;y++}state.month=`${y}-${String(m).padStart(2,'0')}`;renderAll()}function shiftMonth(value,delta){let[y,m]=value.split('-').map(Number);m+=delta;if(m<1){m=12;y--}if(m>12){m=1;y++}return `${y}-${String(m).padStart(2,'0')}`}
+function switchView(v){state.view=v;window.scrollTo({top:0,behavior:'smooth'});$$('.view').forEach(x=>x.classList.remove('active'));$(`#view-${v}`).classList.add('active');$$('[data-view]').forEach(b=>b.classList.toggle('active',b.dataset.view===v));const map={dashboard:['Tổng quan','Theo dõi dòng tiền, thu chi 12 tháng và tài sản.'],transactions:['Giao dịch','Tìm kiếm, lọc, thêm, sửa và xóa giao dịch.'],assets:['Tài sản','Tài sản được gom nhóm. STOCK mở chi tiết khi cần.'],reports:['Báo cáo','Giải thích rõ thu chi, dòng tiền, đầu tư và cơ cấu tài sản.']};$('#pageTitle').textContent=map[v][0];$('#pageSubtitle').textContent=map[v][1];$('#addHeaderBtn').style.display=v==='transactions'?'none':'inline-flex';renderAll()}
+function renderAll(){let d=dashboard();$('#monthDisplay').textContent=monthLabel(state.month);$('#miniBalance').textContent=fmt(d.bank);renderDashboard(d);renderTransactions();renderAssets();try{renderReports(d)}catch(e){console.error('Report render error:',e)}}
+function dashboard(){let monthTx=state.giaoDich.filter(t=>t.ngay.slice(0,7)===state.month),assets=state.taiSan.filter(a=>a.trang_thai==='ACTIVE');let d={income:sum(monthTx,'INCOME'),expense:sum(monthTx,'EXPENSE'),invest:sum(monthTx,'INVEST'),divest:sum(monthTx,'DIVEST'),bank:assetVal('BANK'),total:assets.reduce((s,a)=>s+a.gia_tri_hien_tai,0),gain:assets.filter(a=>a.loai_tai_san!=='BANK').reduce((s,a)=>s+a.lai_lo_tam_tinh,0),expenseGroup:group(monthTx.filter(t=>t.loai_giao_dich==='EXPENSE'),'nhom_danh_muc','so_tien'),assetGroup:group(assets,'loai_tai_san','gia_tri_hien_tai')};d.net=d.income-d.expense-d.invest+d.divest;return d}
+function renderDashboard(d){$('#kpiGrid').innerHTML=[kpi('Tiền hiện có',d.bank,'💰','blue','Số dư BANK'),kpi('Thu nhập tháng',d.income,'🟢','green','Tiền vào'),kpi('Chi tiêu tháng',d.expense,'🔴','red','Chỉ tính EXPENSE'),kpi('Đầu tư tháng',d.invest,'🟣','purple','Không tính chi tiêu'),kpi('Tổng tài sản',d.total,'💎','teal','BANK + tài sản'),kpi('Lãi/lỗ tài sản',d.gain,d.gain>=0?'↗️':'↘️',d.gain>=0?'green':'red','Tạm tính')].join('');$('#expenseLabel').textContent=monthLabel(state.month);$('#yearLabel').textContent='Năm '+state.dashboardYear;donut('expenseChart',d.expenseGroup,colorsFor(Object.keys(d.expenseGroup),'expense'));renderLegend('expenseLegend',d.expenseGroup,colorsFor(Object.keys(d.expenseGroup),'expense'));donut('assetChart',d.assetGroup,colorsFor(Object.keys(d.assetGroup),'asset'));renderLegend('assetLegend',d.assetGroup,colorsFor(Object.keys(d.assetGroup),'asset'));yearChart('yearlyChart',true,state.dashboardYear);renderRecent()}
+function kpi(label,val,ico,tone,sub){let svg=KPI_ICONS[label]||ico;return`<div class="card kpi ${tone}"><div class="kpi-head"><span class="kpi-label">${label}</span><span class="kpi-ico">${svg}</span></div><p class="kpi-value">${fmt(val)}</p><p class="kpi-sub">${sub}</p></div>`}
+function prepareYear(yearOverride){let y=String(yearOverride||state.month.slice(0,4)),labs=['T1','T2','T3','T4','T5','T6','T7','T8','T9','T10','T11','T12'];let income=[],expense=[];for(let i=1;i<=12;i++){let m=`${y}-${String(i).padStart(2,'0')}`,arr=state.giaoDich.filter(t=>t.ngay.slice(0,7)===m);income.push(sum(arr,'INCOME'));expense.push(sum(arr,'EXPENSE'))}return{labs,income,expense,year:y}}
+function yearChart(id,showLabels=false,yearOverride=null){let y=prepareYear(yearOverride);bar(id,y.labs,[{label:'Thu nhập',data:y.income,color:'#16a34a'},{label:'Chi tiêu',data:y.expense,color:'#ef4444'}],showLabels)}
+const barValuePlugin={id:'barValuePlugin',afterDatasetsDraw(chart){if(!chart.$showValues||isMobile())return;const{ctx}=chart;ctx.save();ctx.font='700 10px Inter, sans-serif';ctx.fillStyle='#6b7280';ctx.textAlign='center';ctx.textBaseline='bottom';chart.data.datasets.forEach((ds,di)=>{const meta=chart.getDatasetMeta(di);meta.data.forEach((bar,i)=>{const val=ds.data[i];if(!val)return;const p=bar.getProps(['x','y'],true);ctx.fillText(compactMoney(val),p.x,p.y-3)})});ctx.restore()}};
+function donut(id,obj,colors){restartChartFx(id);let labels=Object.keys(obj),data=Object.values(obj);if(charts[id])charts[id].destroy();charts[id]=new Chart($('#'+id),{type:'doughnut',data:{labels:labels.length?labels:['Không có dữ liệu'],datasets:[{data:data.length?data:[1],backgroundColor:labels.length?colors:['#e5e7eb'],borderColor:'#ffffff',borderWidth:3,hoverOffset:10,spacing:2}]},options:{responsive:true,maintainAspectRatio:false,cutout:'62%',rotation:-90,circumference:360,animation:{animateRotate:true,animateScale:false,duration:1300,easing:'easeOutQuart'},transitions:{active:{animation:{duration:260,easing:'easeOutQuart'}}},plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`${c.label}: ${fmt(c.raw)}`}}}}})}
+function compactMoney(v){return new Intl.NumberFormat('vi-VN',{notation:'compact',maximumFractionDigits:1}).format(v)+' ₫'}function isMobile(){return window.matchMedia&&window.matchMedia('(max-width: 767px)').matches}
+function restartChartFx(id){let canvas=$('#'+id);if(!canvas)return;let box=canvas.closest('.chart');if(box){box.classList.remove('chart-fx');void box.offsetWidth;box.classList.add('chart-fx')}let card=canvas.closest('.card');if(card){card.classList.remove('chart-card-fx');void card.offsetWidth;card.classList.add('chart-card-fx')}}
+function restartSummaryFx(){let box=$('#summaryBreakdown');if(!box)return;box.classList.remove('chart-card-fx');void box.offsetWidth;box.classList.add('chart-card-fx')}
+function bar(id,labels,sets,showLabels=false){restartChartFx(id);if(charts[id])charts[id].destroy();let finalData=sets.map(s=>s.data.slice());charts[id]=new Chart($('#'+id),{type:'bar',data:{labels,datasets:sets.map(s=>({label:s.label,data:s.data.map(()=>0),backgroundColor:s.color,borderRadius:8,barThickness:'flex'}))},options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:showLabels?22:0}},animation:{duration:950,easing:'easeOutQuart',delay:ctx=>ctx.type==='data'?(ctx.dataIndex||0)*30:0},transitions:{active:{animation:{duration:350}}},plugins:{legend:{position:'bottom'}},scales:{x:{grid:{display:false}},y:{beginAtZero:true,ticks:{callback:v=>new Intl.NumberFormat('vi-VN',{notation:'compact'}).format(v)}}}},plugins:showLabels?[barValuePlugin]:[]});charts[id].$showValues=false;requestAnimationFrame(()=>{if(!charts[id])return;charts[id].data.datasets.forEach((ds,i)=>{ds.data=finalData[i]});charts[id].update();let maxLen=Math.max(...finalData.map(a=>a.length),0);setTimeout(()=>{if(charts[id]){charts[id].$showValues=true;charts[id].draw()}},1050+maxLen*30)})}
+function colorsFor(labels,type){const exp={'Sinh hoạt':'#ef4444','Gia đình':'#f97316','Mua sắm':'#ec4899','Giải trí':'#eab308','Khác':'#64748b'};const asset={'BANK':'#2563eb','GOLD':'#f59e0b','STOCK':'#7c3aed','LAND':'#92400e','INSURANCE':'#06b6d4','SAVING':'#16a34a'};const general={'Chính':'#16a34a','Khác':'#94a3b8','Vàng':'#f59e0b','Chứng khoán':'#7c3aed','Bất động sản':'#92400e','Tiết kiệm':'#14b8a6','Bảo hiểm tích lũy':'#2563eb'};const fb=['#2563eb','#16a34a','#ef4444','#7c3aed','#0891b2','#f59e0b','#ec4899','#14b8a6','#64748b'];let map=type==='expense'?exp:type==='asset'?asset:general;return labels.map((l,i)=>map[l]||fb[i%fb.length])}
+function renderLegend(id,obj,colors){let el=$('#'+id);if(!el)return;el.classList.remove('legend-show');el.classList.add('legend-hidden');let entries=Object.entries(obj);el.innerHTML=entries.length?entries.map(([k,v],i)=>`<div class="legend-item" style="animation-delay:${i*45}ms"><span class="legend-name"><i class="dot" style="background:${colors[i]}"></i>${esc(k)}</span><span class="legend-value">${fmt(v)}</span></div>`).join(''):empty('Không có dữ liệu');setTimeout(()=>{el.classList.remove('legend-hidden');el.classList.add('legend-show')},1320)}
+function renderRecent(){let limit=Number($('#recentLimit')?.value||state.recentLimit||10),type=$('#recentType')?.value||state.recentType||'';state.recentLimit=limit;state.recentType=type;let items=[...state.giaoDich].filter(t=>!type||t.loai_giao_dich===type).sort(compareTransactions).slice(0,limit);if(!items.length){$('#recentList').innerHTML=empty('Không có giao dịch phù hợp');return}let split=Math.ceil(items.length/2),left=items.slice(0,split),right=items.slice(split);$('#recentList').innerHTML=`<div class="recent-col">${left.map((t,i)=>recentItem(t,i+1)).join('')}</div><div class="recent-col">${right.map((t,i)=>recentItem(t,split+i+1)).join('')}</div>`}
+function item(t){let note=t.ghi_chu?`<div class="note-line"><b>Ghi chú:</b><span>${esc(t.ghi_chu)}</span></div>`:'';return`<div class="item"><div><p class="item-title">${esc(t.hang_muc_con)} ${t.ten_tai_san?'・'+esc(t.ten_tai_san):''}</p><div class="meta"><span>${date(t.ngay)}</span><span class="badge ${t.loai_giao_dich}">${label(t.loai_giao_dich)}</span></div>${note}</div><div class="amount ${tone(t.loai_giao_dich)}">${sign(t)}</div></div>`}
+function recentItem(t,idx){let rank=String(idx).padStart(2,'0'),note=t.ghi_chu?`<div class="recent-note">${esc(t.ghi_chu)}</div>`:'';return`<div class="item recent-item"><div class="recent-main"><div class="recent-top"><span class="recent-rank ${t.loai_giao_dich}">#${rank}</span><span>${date(t.ngay)}</span><span class="badge ${t.loai_giao_dich}">${label(t.loai_giao_dich)}</span></div><p class="item-title">${esc(t.hang_muc_con)} ${t.ten_tai_san?'・'+esc(t.ten_tai_san):''}</p></div><div class="recent-side">${note}<div class="amount ${tone(t.loai_giao_dich)}">${sign(t)}</div></div></div>`}
+function compareTransactions(a,b){const d=String(b.ngay||'').localeCompare(String(a.ngay||''));if(d!==0)return d;const tb=(b.updated_at||b.created_at||0),ta=(a.updated_at||a.created_at||0);if(tb!==ta)return tb-ta;return String(b.id||'').localeCompare(String(a.id||''))}
+function handleTxnRangeChange(){let range=$('#txnRange').value,box=$('#txnDateRange');if(range==='ALL'){box.classList.add('hide');$('#txnFromDate').value='';$('#txnToDate').value=''}else{box.classList.remove('hide');let r=calcRange(range);if(r){$('#txnFromDate').value=r.from;$('#txnToDate').value=r.to}}renderTransactions()}
+function calcRange(range){let end=new Date(),start=new Date(end);if(range==='1M')start.setMonth(start.getMonth()-1);else if(range==='3M')start.setMonth(start.getMonth()-3);else if(range==='6M')start.setMonth(start.getMonth()-6);else if(range==='1Y')start.setFullYear(start.getFullYear()-1);else if(range==='CUSTOM')return null;else return null;return{from:toISO(start),to:toISO(end)}}
+function toISO(d){return new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,10)}
+function inTxnDateRange(t){let range=$('#txnRange')?.value||'ALL';if(range==='ALL')return true;let from=$('#txnFromDate').value,to=$('#txnToDate').value;if(from&&t.ngay<from)return false;if(to&&t.ngay>to)return false;return true}
+function renderTransactions(){let q=norm($('#txnSearch').value),type=$('#txnType').value;let items=state.giaoDich.filter(inTxnDateRange);if(type)items=items.filter(t=>t.loai_giao_dich===type);if(q)items=items.filter(t=>norm(Object.values(t).join(' ')).includes(q));items.sort(compareTransactions);$('#txnTable').innerHTML=items.map(t=>`<tr><td>${date(t.ngay)}</td><td><span class="badge ${t.loai_giao_dich}">${label(t.loai_giao_dich)}</span></td><td>${esc(t.nhom_danh_muc)}</td><td>${esc(t.hang_muc_con)}</td><td>${esc(t.ten_tai_san||'-')}</td><td>${esc(t.ghi_chu)}</td><td class="${tone(t.loai_giao_dich)}"><b>${sign(t)}</b></td><td><div class="row-actions"><button class="action-btn action-edit" onclick="openForm('${t.id}')">✏️ Sửa</button><button class="action-btn action-delete" onclick="delTxn('${t.id}')">🗑️ Xóa</button></div></td></tr>`).join('')||`<tr><td colspan="8">${empty('Không có giao dịch phù hợp')}</td></tr>`;$('#txnMobile').innerHTML=items.map(t=>`<div onclick="openForm('${t.id}')">${item(t)}</div>`).join('')||empty('Không có giao dịch phù hợp')}
+function summarizeAssets(){let arr=state.taiSan.filter(a=>a.trang_thai==='ACTIVE'&&a.loai_tai_san!=='BANK'),map={};arr.forEach(a=>{let k=a.loai_tai_san;if(!map[k])map[k]={type:k,count:0,name:assetTypeName(k),qty:0,unit:'',cost:0,value:0,gain:0,items:[]};map[k].count++;map[k].qty+=Number(a.so_luong||0);map[k].unit=map[k].unit||a.don_vi;map[k].cost+=Number(a.tong_gia_von||0);map[k].value+=Number(a.gia_tri_hien_tai||0);map[k].gain+=Number(a.lai_lo_tam_tinh||0);map[k].items.push(a)});return Object.values(map).sort((a,b)=>b.value-a.value)}
+function assetTypeName(t){return{GOLD:'Vàng',STOCK:'Chứng khoán',LAND:'Bất động sản',INSURANCE:'Bảo hiểm',SAVING:'Tiết kiệm'}[t]||t}
+function renderAssets(){let q=norm($('#assetSearch').value),type=$('#assetType').value;let groups=summarizeAssets();if(type)groups=groups.filter(g=>g.type===type);if(q)groups=groups.filter(g=>norm(g.name+' '+g.type+' '+g.items.map(i=>i.ten_tai_san).join(' ')).includes(q));$('#assetSummaryGrid').innerHTML=groups.map(assetSummaryCard).join('')||empty('Không có tài sản phù hợp');if(state.assetDetailType&&groups.some(g=>g.type===state.assetDetailType))renderAssetDetail(state.assetDetailType);else $('#assetDetail').classList.remove('show')}
+function assetSummaryCard(g){let isStock=g.type==='STOCK';return`<div class="card asset-summary ${g.type}" onclick="showAssetDetail('${g.type}')"><div class="asset-head"><div><div class="asset-type">${g.type}</div><div class="asset-name">${g.name}</div></div><span class="status-badge">${isStock?g.count+' mã':'Tổng'}</span></div><div class="asset-value">${fmt(g.value)}</div><div class="asset-stats"><div class="stat"><span>Giá vốn</span><b>${fmt(g.cost)}</b></div><div class="stat"><span>Lãi/lỗ</span><b style="color:${g.gain>=0?'var(--green)':'var(--red)'}">${fmt(g.gain)}</b></div><div class="stat"><span>Số lượng</span><b>${g.qty} ${g.unit}</b></div><div class="stat"><span>Chi tiết</span><b>${isStock?'Xem mã CP':'Xem tài sản'}</b></div></div></div>`}
+function showAssetDetail(type){state.assetDetailType=type;renderAssetDetail(type)}
+function renderAssetDetail(type){let groups=summarizeAssets(),g=groups.find(x=>x.type===type);if(!g){$('#assetDetail').classList.remove('show');return}let rows=g.items.sort((a,b)=>b.gia_tri_hien_tai-a.gia_tri_hien_tai).map(a=>`<tr><td><span class="stock-chip">${esc(a.ten_tai_san)}</span></td><td>${a.so_luong} ${a.don_vi}</td><td>${fmt(a.tong_gia_von)}</td><td>${fmt(a.gia_hien_tai)}</td><td>${fmt(a.gia_tri_hien_tai)}</td><td style="color:${a.lai_lo_tam_tinh>=0?'var(--green)':'var(--red)'}"><b>${fmt(a.lai_lo_tam_tinh)}</b></td></tr>`).join('');$('#assetDetail').innerHTML=`<div class="card"><div class="detail-head"><div><h3 style="margin:0">Chi tiết ${g.name}</h3><div class="meta">${g.count} tài sản · Tổng ${fmt(g.value)}</div></div><button class="btn btn-soft" onclick="state.assetDetailType='';document.getElementById('assetDetail').classList.remove('show')">Đóng</button></div><div class="stock-table"><table><thead><tr><th>Tên</th><th>Số lượng</th><th>Giá vốn</th><th>Giá hiện tại</th><th>Giá trị</th><th>Lãi/lỗ</th></tr></thead><tbody>${rows}</tbody></table></div></div>`;$('#assetDetail').classList.add('show');$('#assetDetail').scrollIntoView({behavior:'smooth',block:'nearest'})}
+function renderReports(d){$('#reportMonth').textContent=monthLabel(state.reportMonth);$('#reportYearLabel').textContent='Năm '+state.reportYear;renderSummaryBreakdown();yearChart('reportYearChart',false,state.reportYear);donut('assetDonutReport',d.assetGroup,colorsFor(Object.keys(d.assetGroup),'asset'));renderLegend('assetReportLegend',d.assetGroup,colorsFor(Object.keys(d.assetGroup),'asset'))}
+function renderDashboardYearOnly(){$('#yearLabel').textContent='Năm '+state.dashboardYear;yearChart('yearlyChart',true,state.dashboardYear)}
+function renderReportSummaryOnly(){$('#reportMonth').textContent=monthLabel(state.reportMonth);renderSummaryBreakdown()}
+function renderReportYearOnly(){$('#reportYearLabel').textContent='Năm '+state.reportYear;yearChart('reportYearChart',false,state.reportYear)}
+function renderSummaryBreakdown(){restartSummaryFx();let tx=state.giaoDich.filter(t=>t.ngay.slice(0,7)===state.reportMonth),config=[['INCOME','Thu nhập','#16a34a'],['EXPENSE','Chi tiêu','#ef4444'],['INVEST','Đầu tư / tích lũy','#7c3aed'],['DIVEST','Thu hồi tài sản','#0891b2']],colorMap={'Chính':'#16a34a','Khác':'#94a3b8','Sinh hoạt':'#ef4444','Gia đình':'#f97316','Mua sắm':'#ec4899','Giải trí':'#eab308','Vàng':'#f59e0b','Chứng khoán':'#7c3aed','Bất động sản':'#92400e','Tiết kiệm':'#14b8a6','Bảo hiểm tích lũy':'#2563eb'};$('#summaryBreakdown').innerHTML=config.map(([type,title,mainColor])=>{let rows=Object.entries(group(tx.filter(t=>t.loai_giao_dich===type),'nhom_danh_muc','so_tien')).sort((a,b)=>b[1]-a[1]),total=rows.reduce((s,r)=>s+r[1],0),max=Math.max(1,...rows.map(r=>r[1]));let body=rows.length?rows.map(([name,value])=>{let pct=total?value/total*100:0,width=Math.max(8,value/max*100),color=colorMap[name]||mainColor;return`<div class="mini-bar-row"><div class="mini-bar-label"><span>${esc(name)}</span><b>${fmt(value)}</b></div><div class="mini-bar-track"><div class="mini-bar-fill" style="width:${width}%;background:${color}"></div></div><div class="mini-bar-meta">${pct.toFixed(1)}% trong ${title}</div></div>`}).join(''):'<div class="empty">Không có dữ liệu</div>';return`<div class="summary-box ${rows.length?'':'mobile-empty'}"><div class="summary-box-head"><b style="color:${mainColor}">${title}</b><span class="summary-total">${fmt(total)}</span></div>${body}</div>`}).join('')}
+
+function moneyDigits(v){return String(v||'').replace(/\D/g,'')}
+function moneyDisplay(v){let d=moneyDigits(v);return d?new Intl.NumberFormat('vi-VN').format(Number(d)):''}
+function moneyNumber(v){let d=moneyDigits(v);return d?Number(d):0}
+function updateMoneyPreview(){let el=$('#fSoTien'),pv=$('#fSoTienPreview');if(!el||!pv)return;let digits=moneyDigits(el.value);if(el.value!==digits)el.value=digits;pv.textContent=digits?(new Intl.NumberFormat('vi-VN').format(Number(digits))+' ₫'):'0 ₫';pv.classList.toggle('empty',!digits)}
+function bindMoneyInput(){let el=$('#fSoTien');if(!el||el.dataset.moneyBound)return;el.dataset.moneyBound='1';el.addEventListener('input',updateMoneyPreview);el.addEventListener('blur',updateMoneyPreview)}
+function categorySource(){return state.danhMuc||[]}
+function fillLevel1(){let src=categorySource(),arr=[...new Set(src.map(x=>x.loai_lon))];$('#fLoai').innerHTML='<option value="">Chọn loại lớn</option>'+arr.map(x=>`<option>${x}</option>`).join('');fillLevel2()}function fillLevel2(){let src=categorySource(),l=$('#fLoai').value,arr=[...new Set(src.filter(x=>x.loai_lon===l).map(x=>x.nhom_danh_muc))];$('#fNhom').innerHTML='<option value="">Chọn nhóm</option>'+arr.map(x=>`<option>${x}</option>`).join('');fillLevel3()}function fillLevel3(){let src=categorySource(),l=$('#fLoai').value,n=$('#fNhom').value,arr=src.filter(x=>x.loai_lon===l&&x.nhom_danh_muc===n);$('#fCon').innerHTML='<option value="">Chọn hạng mục</option>'+arr.map(x=>`<option>${x.hang_muc_con}</option>`).join('');toggleAssetFields()}function selectedDm(){let src=categorySource();return src.find(x=>x.loai_lon===$('#fLoai').value&&x.nhom_danh_muc===$('#fNhom').value&&x.hang_muc_con===$('#fCon').value)}function toggleAssetFields(){let x=selectedDm();$('#assetFields').classList.toggle('hide',!(x&&['INVEST','DIVEST'].includes(x.loai_giao_dich)))}
+function openForm(id){document.body.classList.add('modal-open');document.body.classList.toggle('editing-txn',!!id);state.edit=id||null;let t=id?state.giaoDich.find(x=>x.id===id):null;$('#modalTitle').textContent=t?'Sửa giao dịch':'Thêm giao dịch';$('#deleteBtn').style.display=t?'inline-flex':'none';$('#txnForm').reset();bindMoneyInput();$('#fPhi').value=0;$('#fNgay').value=t?t.ngay:new Date().toISOString().slice(0,10);fillLevel1();if(t){$('#fLoai').value=t.loai_lon;fillLevel2();$('#fNhom').value=t.nhom_danh_muc;fillLevel3();$('#fCon').value=t.hang_muc_con;toggleAssetFields();$('#fSoTien').value=t.so_tien;updateMoneyPreview();$('#fTenTaiSan').value=t.ten_tai_san;$('#fSoLuong').value=t.so_luong;$('#fDonVi').value=t.don_vi;$('#fDonGia').value=t.don_gia;$('#fPhi').value=t.phi;$('#fGhiChu').value=t.ghi_chu}else{updateMoneyPreview()}$('#modalBg').classList.add('show')}function closeForm(){$('#modalBg').classList.remove('show');document.body.classList.remove('modal-open');document.body.classList.remove('editing-txn');state.edit=null}
+async function saveTxn(e){e.preventDefault();let x=selectedDm();if(!x)return toast('Vui lòng chọn đủ danh mục');let t=tx($('#fNgay').value,x.loai_lon,x.nhom_danh_muc,x.hang_muc_con,x.loai_giao_dich,x.loai_tai_san,moneyNumber($('#fSoTien').value),$('#fTenTaiSan').value,$('#fSoLuong').value,$('#fDonVi').value,$('#fDonGia').value,$('#fPhi').value,$('#fGhiChu').value);if(t.so_tien<=0)return toast('Số tiền phải lớn hơn 0');if(['INVEST','DIVEST'].includes(t.loai_giao_dich)&&(!t.ten_tai_san||t.so_luong<=0||!t.don_vi))return toast('Vui lòng nhập đủ thông tin tài sản');try{if(FB.ready){if(state.edit){let old=state.giaoDich.find(x=>x.id===state.edit)||{};t.id=state.edit;t.created_at=old.created_at||Date.now();t.updated_at=Date.now();await FB.db.collection(FIREBASE_COLLECTIONS.giaoDich).doc(String(t.id)).set(t,{merge:true});state.giaoDich[state.giaoDich.findIndex(x=>x.id===state.edit)]=t;toast('Đã cập nhật giao dịch')}else{t.created_at=Date.now();t.updated_at=t.created_at;await FB.db.collection(FIREBASE_COLLECTIONS.giaoDich).doc(String(t.id)).set(t,{merge:true});state.giaoDich.push(t);toast('Đã thêm giao dịch')}state.month=t.ngay.slice(0,7);recalc();await syncTaiSanToFirebase();saveFirebaseCache();closeForm();renderAll();return}if(state.edit){t.id=state.edit;t.created_at=Date.now()+Math.random();t.updated_at=t.created_at;state.giaoDich[state.giaoDich.findIndex(x=>x.id===state.edit)]=t;toast('Đã cập nhật giao dịch demo')}else{state.giaoDich.push(t);toast('Đã thêm giao dịch demo')}state.month=t.ngay.slice(0,7);recalc();closeForm();renderAll()}catch(err){console.error(err);toast(err.message||'Không lưu được giao dịch')}}function deleteCurrent(){if(state.edit)delTxn(state.edit)}async function delTxn(id){if(!confirm('Xóa giao dịch này?'))return;try{if(FB.ready){await FB.db.collection(FIREBASE_COLLECTIONS.giaoDich).doc(String(id)).delete();state.giaoDich=state.giaoDich.filter(t=>t.id!==id);recalc();await syncTaiSanToFirebase();saveFirebaseCache();closeForm();renderAll();toast('Đã xóa giao dịch');return}state.giaoDich=state.giaoDich.filter(t=>t.id!==id);recalc();closeForm();renderAll();toast('Đã xóa giao dịch demo')}catch(err){console.error(err);toast(err.message||'Không xóa được giao dịch')}}
+function recalc(){let price={};state.taiSan.forEach(a=>price[key(a.loai_tai_san,a.ten_tai_san)]=a.gia_hien_tai);let map={[key('BANK','Tài khoản ngân hàng')]:asset('TS001','BANK','Tài khoản ngân hàng',1,'TK',500000000,500000000,500000000,500000000,0,'ACTIVE')};[...state.giaoDich].sort((a,b)=>a.ngay.localeCompare(b.ngay)).forEach(t=>{let bank=map[key('BANK','Tài khoản ngân hàng')],amt=+t.so_tien||0,fee=+t.phi||0,qty=+t.so_luong||0;if(t.loai_giao_dich==='INCOME')bank.gia_tri_hien_tai+=amt;if(t.loai_giao_dich==='EXPENSE')bank.gia_tri_hien_tai-=amt;if(t.loai_giao_dich==='INVEST'){bank.gia_tri_hien_tai-=amt+fee;let k=key(t.loai_tai_san,t.ten_tai_san);if(!map[k])map[k]=asset('TS'+Object.keys(map).length,t.loai_tai_san,t.ten_tai_san,0,t.don_vi,0,0,+t.don_gia||0,0,0,'ACTIVE');let a=map[k];a.so_luong+=qty;a.tong_gia_von+=amt+fee;a.gia_von_binh_quan=a.so_luong?a.tong_gia_von/a.so_luong:0;a.gia_hien_tai=price[k]||(+t.don_gia||a.gia_von_binh_quan)}if(t.loai_giao_dich==='DIVEST'){bank.gia_tri_hien_tai+=amt-fee;let k=key(t.loai_tai_san,t.ten_tai_san),a=map[k];if(a){let avg=a.so_luong?a.tong_gia_von/a.so_luong:0;a.so_luong=Math.max(0,a.so_luong-qty);a.tong_gia_von=Math.max(0,a.tong_gia_von-avg*qty);a.gia_von_binh_quan=a.so_luong?a.tong_gia_von/a.so_luong:0;if(!a.so_luong)a.trang_thai='SOLD'}}});Object.values(map).forEach(a=>{if(a.loai_tai_san==='BANK'){a.tong_gia_von=a.gia_tri_hien_tai;a.gia_hien_tai=a.gia_tri_hien_tai;a.gia_von_binh_quan=a.gia_tri_hien_tai;a.lai_lo_tam_tinh=0}else{let demo={ [key('GOLD','Vàng SJC')]:130000000,[key('STOCK','FPT')]:170000,[key('STOCK','MWG')]:90000,[key('SAVING','Quỹ khẩn cấp')]:30000000,[key('INSURANCE','Manulife HD01')]:18000000};a.gia_hien_tai=demo[key(a.loai_tai_san,a.ten_tai_san)]||a.gia_hien_tai||a.gia_von_binh_quan;a.gia_tri_hien_tai=a.so_luong*a.gia_hien_tai;a.lai_lo_tam_tinh=a.gia_tri_hien_tai-a.tong_gia_von}});state.taiSan=Object.values(map)}
+function asset(id,type,name,qty,unit,cost,avg,price,val,gain,status){return{id,loai_tai_san:type,ten_tai_san:name,so_luong:qty,don_vi:unit,tong_gia_von:cost,gia_von_binh_quan:avg,gia_hien_tai:price,gia_tri_hien_tai:val,lai_lo_tam_tinh:gain,trang_thai:status}}
+function sum(arr,type){return arr.filter(t=>t.loai_giao_dich===type).reduce((s,t)=>s+(+t.so_tien||0),0)}function group(arr,g,v){return arr.reduce((o,x)=>{let k=x[g]||'Khác';o[k]=(o[k]||0)+(+x[v]||0);return o},{})}function assetVal(type){return state.taiSan.filter(a=>a.loai_tai_san===type&&a.trang_thai==='ACTIVE').reduce((s,a)=>s+a.gia_tri_hien_tai,0)}function key(t,n){return String(t).toUpperCase()+'||'+String(n).trim().toUpperCase()}function label(t){return{INCOME:'Thu nhập',EXPENSE:'Chi tiêu',INVEST:'Đầu tư',DIVEST:'Thu hồi'}[t]||t}function tone(t){return t==='INCOME'||t==='DIVEST'?'green':t==='EXPENSE'?'red':'purple'}function sign(t){let s=t.loai_giao_dich==='INCOME'||t.loai_giao_dich==='DIVEST'?'+':'-';return s+fmt(t.so_tien)}function date(s){return new Date(s+'T12:00:00').toLocaleDateString('vi-VN')}function monthLabel(s){let[y,m]=s.split('-');return`Tháng ${+m}/${y}`}function norm(s){return String(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/đ/g,'d')}function esc(s){return String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}function empty(t){return`<div class="empty">${esc(t)}</div>`}function toast(m){let e=$('#toast');e.textContent=m;e.classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(()=>e.classList.remove('show'),2400)}
+</script></body></html><!-- noop -->
